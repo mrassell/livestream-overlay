@@ -196,7 +196,7 @@
     align-items: center;
     justify-content: center;
     gap: 16px;
-    z-index: 20;
+    z-index: 50;
   }
 
   #allow-prompt p { color: var(--muted); font-size: 14px; }
@@ -254,18 +254,6 @@
     opacity: 0.85;
   }
 
-  .chat-solo-hint {
-    padding: 8px 14px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: 0.02em;
-    background: rgba(0,0,0,0.35);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    line-height: 1.35;
-  }
-
   .pill {
     margin-left: auto;
     background: rgba(255,255,255,0.06);
@@ -286,6 +274,20 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+  }
+
+  /* Invisible center target: double-tap toggles flood / hype chat */
+  .flood-doubletap-zone {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(48vmin, 280px);
+    height: min(48vmin, 280px);
+    z-index: 25;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    background: transparent;
   }
 
   .msg {
@@ -424,11 +426,9 @@
 <!-- Chat -->
 <div class="chat-panel">
   <div class="chat-header">
-    <button type="button" class="chat-tab" id="chat-tab" aria-pressed="false" title="Double-tap for chat-only (portrait)">CHAT</button>
+    <button type="button" class="chat-tab" id="chat-tab" aria-pressed="false" title="Chat fullscreen">CHAT</button>
     <div class="pill" id="pill-count">14,784</div>
   </div>
-
-  <div class="chat-solo-hint" id="chat-solo-hint" hidden>Double-tap CHAT to show the stream again.</div>
 
   <div class="chat-messages" id="chat-messages"></div>
 
@@ -443,6 +443,8 @@
     </div>
   </div>
 </div>
+
+<div class="flood-doubletap-zone" id="flood-doubletap-zone" aria-hidden="true"></div>
 
 <script>
 /* ── Camera (facing + mirror) ── */
@@ -563,35 +565,20 @@ function tickViewers() {
 renderViewers();
 setInterval(tickViewers, 5000);
 
-/* ── Chat-only (double-tap CHAT) — portrait second screen ── */
+/* ── Chat fullscreen (single tap CHAT) — portrait second screen ── */
 const chatTab = document.getElementById("chat-tab");
-const chatSoloHint = document.getElementById("chat-solo-hint");
 const DOUBLE_TAP_MS = 420;
-let chatTabLastTap = 0;
 
 function setChatSolo(on) {
   document.body.classList.toggle("chat-solo", on);
   chatTab.setAttribute("aria-pressed", on ? "true" : "false");
-  chatSoloHint.hidden = !on;
 }
 
 function toggleChatSolo() {
   setChatSolo(!document.body.classList.contains("chat-solo"));
 }
 
-chatTab.addEventListener("touchend", (e) => {
-  const now = Date.now();
-  if (now - chatTabLastTap < DOUBLE_TAP_MS) {
-    e.preventDefault();
-    toggleChatSolo();
-    chatTabLastTap = 0;
-  } else {
-    chatTabLastTap = now;
-  }
-}, { passive: false });
-
-chatTab.addEventListener("dblclick", (e) => {
-  e.preventDefault();
+chatTab.addEventListener("click", () => {
   toggleChatSolo();
 });
 
@@ -626,22 +613,114 @@ const box = document.getElementById("chat-messages");
 const chatInput = document.getElementById("chat-input");
 const sendChatBtn = document.getElementById("send-chat-btn");
 
-function pruneChat() {
-  const kids = box.querySelectorAll(".msg");
-  if (kids.length > 22) kids[0].remove();
+let chatLoopTimer = null;
+let hypeBurstActive = false;
+/** ~2s full spam, then ~3s taper (slower + fewer Ws + more normal lines) */
+const HYPE_PEAK_MS = 2000;
+const HYPE_FADE_MS = 3000;
+
+const hypeChatters = [
+  { user: "Wspam_bot9000", color: "#53FC18" },
+  { user: "valid_or_bust", color: "#ff6b6b" },
+  { user: "southlawn_enjoyer", color: "#4d96ff" },
+  { user: "WWWWWWWWWWW", color: "#ffd93d" },
+  { user: "columbiaW", color: "#74c0fc" },
+  { user: "L_to_W_converter", color: "#cc5de8" },
+  { user: "chat_is_MOVING", color: "#69db7c" },
+  { user: "W_key_stuck", color: "#ffa94d" },
+  { user: "no_cap_just_W", color: "#9775fa" },
+  { user: "stream_goes_hard", color: "#fcc2d7" },
+  { user: "W_W_W_W_W", color: "#a9e34b" },
+  { user: "ivy_legue_W", color: "#4dabf7" },
+  { user: "crowd_synccccc", color: "#53FC18" },
+  { user: "spam_Ws_if_agree", color: "#ff922b" },
+  { user: "bacchanal_W", color: "#da77f2" },
+];
+
+function randomHypeLine() {
+  const wShort = () => "W".repeat(1 + Math.floor(Math.random() * 4));
+  const wLong = () => "W".repeat(6 + Math.floor(Math.random() * 18));
+  const wSpaced = () => Array.from({ length: 4 + Math.floor(Math.random() * 10) }, () => "W").join(" ");
+  const lines = [
+    wShort,
+    wLong,
+    wSpaced,
+    () => "WWW",
+    () => "WWWWW",
+    () => "LWWWWWW",
+    () => "VALID W",
+    () => "SO VALID RN",
+    () => "spam Ws if u think this valid",
+    () => "W stream W stream W",
+    () => "everyone hit the W",
+    () => "W".repeat(12),
+    () => "HUGE W NO CAP",
+    () => "W W W W W W W",
+    () => "chat moving WWW",
+    () => "this is peak W",
+    () => "W overload",
+    () => "W key broke",
+    () => "columbia W W W",
+    () => "IYKYK W",
+    () => "W spam incoming",
+    () => "W".repeat(8) + "!!!",
+    () => "VALID VALID W",
+    () => "chat go brr W",
+    () => "W momentum",
+    () => "everybody WWW",
+    () => "Hype",
+    () => "HYPE",
+    () => "HYPEEEE",
+    () => "HYPE HYPE HYPE",
+    () => "LETS GO",
+    () => "LETS GOOO",
+    () => "LETS GOOOOO",
+    () => "LETS GOOOOOOO",
+    () => "LETS GOOOOOOOOO",
+    () => "LETS GO no cap",
+    () => "HYPE TRAIN",
+    () => "WWW LETS GO",
+    () => "LETS GO WWW",
+  ];
+  return lines[Math.floor(Math.random() * lines.length)]();
 }
 
-function addMsg() {
-  const m = messages[idx++ % messages.length];
+function randomHypeMsg() {
+  const u = hypeChatters[Math.floor(Math.random() * hypeChatters.length)];
+  const r = Math.random();
+  const badge = r < 0.18 ? "v" : r < 0.14 ? "sub" : null;
+  return { user: u.user, color: u.color, text: randomHypeLine(), badge };
+}
+
+function pruneChat() {
+  const max = hypeBurstActive ? 56 : 22;
+  let kids = box.querySelectorAll(".msg");
+  while (kids.length > max) {
+    kids[0].remove();
+    kids = box.querySelectorAll(".msg");
+  }
+}
+
+function pruneChatToNormalMax() {
+  let kids = box.querySelectorAll(".msg");
+  while (kids.length > 22) {
+    kids[0].remove();
+    kids = box.querySelectorAll(".msg");
+  }
+}
+
+function appendChatRow(m) {
   const el = document.createElement("div");
   el.className = "msg";
-
   const b = m.badge === "v"   ? `<span class="badge-v">&#10003;</span>` :
             m.badge === "sub" ? `<span class="badge-sub">S</span>` : "";
-
   el.innerHTML = `${b}<span class="msg-user" style="color:${m.color}">${m.user}:</span><span class="msg-text"> ${m.text}</span>`;
   box.appendChild(el);
   pruneChat();
+}
+
+function addMsg() {
+  appendChatRow(messages[idx++ % messages.length]);
 }
 
 function sendTimprodMessage() {
@@ -672,9 +751,73 @@ chatInput.addEventListener("keydown", (e) => {
 
 for (let i = 0; i < 13; i++) addMsg();
 
-(function loop() {
-  setTimeout(() => { addMsg(); loop(); }, 1600 + Math.random() * 2400);
-})();
+function startChatLoop() {
+  function tick() {
+    addMsg();
+    chatLoopTimer = setTimeout(tick, 1600 + Math.random() * 2400);
+  }
+  chatLoopTimer = setTimeout(tick, 1600 + Math.random() * 2400);
+}
+
+function runHypeBurst() {
+  if (hypeBurstActive) return;
+  hypeBurstActive = true;
+  const startAt = Date.now();
+  const totalMs = HYPE_PEAK_MS + HYPE_FADE_MS;
+
+  function burstTick() {
+    const elapsed = Date.now() - startAt;
+    if (elapsed >= totalMs) {
+      hypeBurstActive = false;
+      pruneChatToNormalMax();
+      return;
+    }
+
+    if (elapsed < HYPE_PEAK_MS) {
+      appendChatRow(randomHypeMsg());
+      setTimeout(burstTick, 24 + Math.random() * 82);
+      return;
+    }
+
+    const u = (elapsed - HYPE_PEAK_MS) / HYPE_FADE_MS;
+    const skipBeat = Math.random() < u * u * 0.42;
+    if (!skipBeat) {
+      const hypeBias = Math.max(0, 1 - u * 1.15 - Math.random() * 0.12);
+      if (Math.random() < hypeBias) {
+        appendChatRow(randomHypeMsg());
+      } else {
+        appendChatRow(messages[idx++ % messages.length]);
+      }
+    }
+
+    const minGap = 85 + u * u * 720;
+    const jitter = Math.random() * (130 + u * 520);
+    const delay = skipBeat ? 45 + Math.random() * (90 + u * 260) : minGap + jitter;
+    setTimeout(burstTick, delay);
+  }
+
+  burstTick();
+}
+
+const floodZone = document.getElementById("flood-doubletap-zone");
+let floodZoneLastTap = 0;
+floodZone.addEventListener("touchend", (e) => {
+  const now = Date.now();
+  if (now - floodZoneLastTap < DOUBLE_TAP_MS) {
+    e.preventDefault();
+    runHypeBurst();
+    floodZoneLastTap = 0;
+  } else {
+    floodZoneLastTap = now;
+  }
+}, { passive: false });
+
+floodZone.addEventListener("dblclick", (e) => {
+  e.preventDefault();
+  runHypeBurst();
+});
+
+startChatLoop();
 </script>
 </body>
 </html>
