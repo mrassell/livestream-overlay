@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kick Stream</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,12 +16,45 @@
     --muted: rgba(255,255,255,0.4);
   }
 
+  html {
+    height: 100%;
+    touch-action: manipulation;
+  }
+
   body {
     background: #000;
-    height: 100vh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100%;
     display: flex;
     overflow: hidden;
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body.chat-solo .stream-area {
+    display: none;
+  }
+
+  body.chat-solo .chat-panel {
+    width: 100%;
+    flex: 1;
+    border-left: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  body.chat-solo .msg {
+    font-size: 15px;
+    padding: 5px 14px;
+  }
+
+  body.chat-solo .chat-header {
+    min-height: 48px;
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+
+  body.chat-solo .chat-input-wrap {
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
   }
 
   /* ── Camera fills left area ── */
@@ -202,11 +236,34 @@
   }
 
   .chat-tab {
+    background: none;
+    border: none;
+    font: inherit;
     font-size: 13px;
     font-weight: 700;
     color: var(--text);
     border-bottom: 2px solid var(--green);
-    padding-bottom: 3px;
+    padding: 0 0 3px 0;
+    margin: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .chat-tab:active {
+    opacity: 0.85;
+  }
+
+  .chat-solo-hint {
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    background: rgba(0,0,0,0.35);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    line-height: 1.35;
   }
 
   .pill {
@@ -367,9 +424,11 @@
 <!-- Chat -->
 <div class="chat-panel">
   <div class="chat-header">
-    <span class="chat-tab">CHAT</span>
+    <button type="button" class="chat-tab" id="chat-tab" aria-pressed="false" title="Double-tap for chat-only (portrait)">CHAT</button>
     <div class="pill" id="pill-count">14,784</div>
   </div>
+
+  <div class="chat-solo-hint" id="chat-solo-hint" hidden>Double-tap CHAT to show the stream again.</div>
 
   <div class="chat-messages" id="chat-messages"></div>
 
@@ -503,6 +562,38 @@ function tickViewers() {
 
 renderViewers();
 setInterval(tickViewers, 5000);
+
+/* ── Chat-only (double-tap CHAT) — portrait second screen ── */
+const chatTab = document.getElementById("chat-tab");
+const chatSoloHint = document.getElementById("chat-solo-hint");
+const DOUBLE_TAP_MS = 420;
+let chatTabLastTap = 0;
+
+function setChatSolo(on) {
+  document.body.classList.toggle("chat-solo", on);
+  chatTab.setAttribute("aria-pressed", on ? "true" : "false");
+  chatSoloHint.hidden = !on;
+}
+
+function toggleChatSolo() {
+  setChatSolo(!document.body.classList.contains("chat-solo"));
+}
+
+chatTab.addEventListener("touchend", (e) => {
+  const now = Date.now();
+  if (now - chatTabLastTap < DOUBLE_TAP_MS) {
+    e.preventDefault();
+    toggleChatSolo();
+    chatTabLastTap = 0;
+  } else {
+    chatTabLastTap = now;
+  }
+}, { passive: false });
+
+chatTab.addEventListener("dblclick", (e) => {
+  e.preventDefault();
+  toggleChatSolo();
+});
 
 /* ── Chat ── */
 const messages = [
