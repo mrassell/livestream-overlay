@@ -36,6 +36,11 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    transform: scaleX(1);
+  }
+
+  #cam.mirrored {
+    transform: scaleX(-1);
   }
 
   /* camera off placeholder */
@@ -112,6 +117,39 @@
     letter-spacing: 0.04em;
     backdrop-filter: blur(4px);
     font-variant-numeric: tabular-nums;
+  }
+
+  .cam-controls {
+    position: absolute;
+    bottom: 18px;
+    right: 18px;
+    display: flex;
+    gap: 8px;
+    z-index: 15;
+    pointer-events: auto;
+  }
+
+  .cam-ctrl-btn {
+    background: rgba(0,0,0,0.55);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.88);
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.03em;
+    backdrop-filter: blur(4px);
+  }
+
+  .cam-ctrl-btn:hover {
+    border-color: rgba(83, 252, 24, 0.35);
+    color: #fff;
+  }
+
+  .cam-ctrl-btn:active {
+    opacity: 0.92;
   }
 
   /* cam permission prompt */
@@ -314,6 +352,11 @@
     <div class="duration" id="duration">01:05:16</div>
   </div>
 
+  <div class="cam-controls" id="cam-controls" hidden>
+    <button type="button" class="cam-ctrl-btn" id="btn-flip-cam" title="Front / back camera">Flip cam</button>
+    <button type="button" class="cam-ctrl-btn" id="btn-mirror" title="Mirror preview">Mirror</button>
+  </div>
+
   <!-- Start prompt -->
   <div id="allow-prompt">
     <p>Allow camera access to show your feed</p>
@@ -343,18 +386,93 @@
 </div>
 
 <script>
-/* ── Camera ── */
-async function startCam() {
+/* ── Camera (facing + mirror) ── */
+let camFacingMode = "user";
+let camMirrored = true;
+
+function stopCamTracks() {
+  const vid = document.getElementById("cam");
+  if (vid.srcObject) {
+    vid.srcObject.getTracks().forEach((t) => t.stop());
+    vid.srcObject = null;
+  }
+}
+
+function applyMirrorClass() {
+  document.getElementById("cam").classList.toggle("mirrored", camMirrored);
+}
+
+async function getCamStream() {
+  const audio = false;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    return await navigator.mediaDevices.getUserMedia({
+      audio,
+      video: { facingMode: { ideal: camFacingMode } },
+    });
+  } catch (e1) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio,
+        video: { facingMode: { exact: camFacingMode } },
+      });
+    } catch (e2) {
+      return await navigator.mediaDevices.getUserMedia({ audio, video: true });
+    }
+  }
+}
+
+async function startCam() {
+  stopCamTracks();
+  try {
+    const stream = await getCamStream();
     const vid = document.getElementById("cam");
     vid.srcObject = stream;
+    camMirrored = camFacingMode === "user";
+    applyMirrorClass();
     document.getElementById("allow-prompt").style.display = "none";
+    document.getElementById("cam-controls").hidden = false;
   } catch (e) {
     document.getElementById("allow-prompt").style.display = "none";
+    document.getElementById("cam-controls").hidden = true;
     document.getElementById("cam-off").style.display = "flex";
   }
 }
+
+async function toggleCameraFacing() {
+  const vid = document.getElementById("cam");
+  if (!vid.srcObject) return;
+  const prev = camFacingMode;
+  camFacingMode = camFacingMode === "user" ? "environment" : "user";
+  stopCamTracks();
+  try {
+    const stream = await getCamStream();
+    vid.srcObject = stream;
+    camMirrored = camFacingMode === "user";
+    applyMirrorClass();
+  } catch (e) {
+    camFacingMode = prev;
+    try {
+      const stream = await getCamStream();
+      vid.srcObject = stream;
+      applyMirrorClass();
+    } catch (e2) {
+      document.getElementById("cam-off").style.display = "flex";
+      document.getElementById("cam-controls").hidden = true;
+    }
+  }
+}
+
+function toggleMirrorPreview() {
+  camMirrored = !camMirrored;
+  applyMirrorClass();
+}
+
+document.getElementById("btn-flip-cam").addEventListener("click", () => {
+  toggleCameraFacing();
+});
+document.getElementById("btn-mirror").addEventListener("click", () => {
+  toggleMirrorPreview();
+});
 
 /* ── Stream timer (starts at 01:05:16) ── */
 const TIMER_START_SEC = 1 * 3600 + 5 * 60 + 16;
