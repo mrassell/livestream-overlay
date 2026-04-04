@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kick Stream</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green: #53FC18;
+    --bg: #0f0f0f;
+    --surface: rgba(15,15,15,0.88);
+    --border: rgba(255,255,255,0.07);
+    --text: #efeff1;
+    --muted: rgba(255,255,255,0.4);
+  }
+
+  body {
+    background: #000;
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* ── Camera fills left area ── */
+  .stream-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+  }
+
+  #cam {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* camera off placeholder */
+  #cam-off {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 14px;
+    display: none;
+  }
+
+  .cam-icon {
+    width: 56px;
+    height: 56px;
+    opacity: 0.3;
+  }
+
+  /* ── HUD overlays ── */
+  .hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .live-badge {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    background: #eb0000;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    padding: 4px 9px;
+    border-radius: 3px;
+  }
+
+  .viewer-chip {
+    position: absolute;
+    top: 18px;
+    left: 74px;
+    background: rgba(0,0,0,0.65);
+    border-radius: 4px;
+    padding: 4px 10px 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    backdrop-filter: blur(6px);
+  }
+
+  #viewer-count {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    min-width: 44px;
+  }
+
+  /* stream duration */
+  .duration {
+    position: absolute;
+    bottom: 18px;
+    left: 18px;
+    background: rgba(0,0,0,0.55);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 0.04em;
+    backdrop-filter: blur(4px);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* cam permission prompt */
+  #allow-prompt {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 20;
+  }
+
+  #allow-prompt p { color: var(--muted); font-size: 14px; }
+
+  .start-btn {
+    background: var(--green);
+    color: #000;
+    font-weight: 800;
+    font-size: 15px;
+    padding: 12px 32px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+
+  .start-btn:hover { opacity: 0.9; }
+
+  /* ── Chat sidebar ── */
+  .chat-panel {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-header {
+    height: 46px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .chat-tab {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    border-bottom: 2px solid var(--green);
+    padding-bottom: 3px;
+  }
+
+  .pill {
+    margin-left: auto;
+    background: rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow: hidden;
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .msg {
+    padding: 3px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    word-break: break-word;
+    border-radius: 3px;
+    animation: rise 0.2s ease;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg:hover { background: rgba(255,255,255,0.04); }
+
+  .msg-user { font-weight: 700; margin-right: 3px; }
+  .msg-text { color: rgba(239,239,241,0.88); }
+
+  .msg-stream {
+    background: rgba(83, 252, 24, 0.07);
+    border-left: 2px solid var(--green);
+    margin-left: 8px;
+    padding-left: 10px;
+  }
+  .msg-stream-user { color: var(--green); }
+
+  .badge-sub {
+    display: inline-block;
+    width: 12px; height: 12px;
+    background: #7c3aed;
+    border-radius: 2px;
+    margin-right: 3px;
+    vertical-align: middle;
+    font-size: 8px; line-height: 12px;
+    text-align: center; color: #fff; font-weight: 900;
+    position: relative; top: -1px;
+  }
+
+  .badge-v {
+    display: inline-block;
+    width: 12px; height: 12px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-right: 3px;
+    vertical-align: middle;
+    font-size: 8px; line-height: 12px;
+    text-align: center; color: #000; font-weight: 900;
+    position: relative; top: -1px;
+  }
+
+  .chat-input-wrap {
+    padding: 10px 10px 14px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    resize: none;
+    line-height: 1.4;
+  }
+
+  textarea::placeholder { color: var(--muted); }
+  textarea:focus { border-color: var(--green); }
+
+  .chat-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+
+  .emote { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 0 3px; }
+
+  .send-btn {
+    background: var(--green);
+    color: #000;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- Camera / stream area -->
+<div class="stream-area">
+  <video id="cam" autoplay playsinline muted></video>
+
+  <div id="cam-off">
+    <svg class="cam-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M15 10l4.553-2.277A1 1 0 0121 8.68v6.64a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+    </svg>
+    <p>Camera not available</p>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="live-badge">LIVE</div>
+    <div class="viewer-chip">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span id="viewer-count">14,784</span>
+    </div>
+    <div class="duration" id="duration">01:05:16</div>
+  </div>
+
+  <!-- Start prompt -->
+  <div id="allow-prompt">
+    <p>Allow camera access to show your feed</p>
+    <button class="start-btn" onclick="startCam()">Enable Camera</button>
+  </div>
+</div>
+
+<!-- Chat -->
+<div class="chat-panel">
+  <div class="chat-header">
+    <span class="chat-tab">CHAT</span>
+    <div class="pill" id="pill-count">14,784</div>
+  </div>
+
+  <div class="chat-messages" id="chat-messages"></div>
+
+  <div class="chat-input-wrap">
+    <textarea id="chat-input" rows="2" placeholder="Send a message..."></textarea>
+    <div class="chat-actions">
+      <div>
+        <button type="button" class="emote">😄</button>
+        <button type="button" class="emote">🎁</button>
+      </div>
+      <button type="button" class="send-btn" id="send-chat-btn">Chat</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Camera ── */
+async function startCam() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const vid = document.getElementById("cam");
+    vid.srcObject = stream;
+    document.getElementById("allow-prompt").style.display = "none";
+  } catch (e) {
+    document.getElementById("allow-prompt").style.display = "none";
+    document.getElementById("cam-off").style.display = "flex";
+  }
+}
+
+/* ── Stream timer (starts at 01:05:16) ── */
+const TIMER_START_SEC = 1 * 3600 + 5 * 60 + 16;
+const startTime = Date.now() - TIMER_START_SEC * 1000;
+setInterval(() => {
+  const s = Math.floor((Date.now() - startTime) / 1000);
+  const h = String(Math.floor(s / 3600)).padStart(2, "0");
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  const sec = String(s % 60).padStart(2, "0");
+  document.getElementById("duration").textContent = `${h}:${m}:${sec}`;
+}, 1000);
+
+/* ── Viewer count ── */
+let viewers = 14784;
+
+function renderViewers() {
+  const s = viewers.toLocaleString();
+  document.getElementById("viewer-count").textContent = s;
+  document.getElementById("pill-count").textContent = s;
+}
+
+function tickViewers() {
+  const delta = Math.floor(Math.random() * 5) + 1;
+  viewers += Math.random() < 0.5 ? -delta : delta;
+  viewers = Math.max(14100, Math.min(16200, viewers));
+  renderViewers();
+}
+
+renderViewers();
+setInterval(tickViewers, 5000);
+
+/* ── Chat ── */
+const messages = [
+  { user: "trapshxt",         color: "#ff922b", text: "YO waka flocka is the artist tonight??", badge: null },
+  { user: "brick_squad_917",  color: "#53FC18", text: "waka flocka that's lit no cap", badge: null },
+  { user: "jxstn___",         color: "#ff6b6b", text: "W columbia", badge: null },
+  { user: "mike2wavy",        color: "#ffd93d", text: "BACCHANAL W", badge: "sub" },
+  { user: "xSniper2007",      color: "#53FC18", text: "this is insane rn", badge: "v" },
+  { user: "kayla_xo",         color: "#4d96ff", text: "south lawn is PACKED rn", badge: null },
+  { user: "nobody420",        color: "#ff922b", text: "i need to transfer LMAOOO", badge: null },
+  { user: "toast_crunch",     color: "#cc5de8", text: "who's headlining tonight", badge: "sub" },
+  { user: "user8943021",      color: "#ff6b6b", text: "W stream fr fr", badge: null },
+  { user: "BIGMAN_TY",        color: "#74c0fc", text: "columbia eating rn no cap", badge: "sub" },
+  { user: "zzzsleepyhead",    color: "#a9e34b", text: "LETS GOOOOOO", badge: null },
+  { user: "ryder__x",         color: "#ffa94d", text: "this is free?? insane", badge: null },
+  { user: "lil_g",            color: "#da77f2", text: "every year they top themselves", badge: "sub" },
+  { user: "thomas_shelbyfan", color: "#4dabf7", text: "W W W W W columbia", badge: null },
+  { user: "bored_at_work",    color: "#ff6b6b", text: "crowd is going absolutely crazy", badge: null },
+  { user: "capybaraEnjoyer",  color: "#69db7c", text: "peak ivy experience right here", badge: "sub" },
+  { user: "sarahh_22",        color: "#fcc2d7", text: "GOATED event as always", badge: null },
+  { user: "nmttt",            color: "#ff922b", text: "columbia on top no debate", badge: null },
+  { user: "night_owl_exe",    color: "#9775fa", text: "vibes are unreal rn bro", badge: "sub" },
+  { user: "diegooo",          color: "#74c0fc", text: "biggest L not being there", badge: null },
+  { user: "vtuber_enjoyer",   color: "#f783ac", text: "POGGERS bacchanal delivering", badge: null },
+  { user: "jakefromstate",    color: "#69db7c", text: "columbia stays winning", badge: "sub" },
+];
+
+let idx = 0;
+const box = document.getElementById("chat-messages");
+const chatInput = document.getElementById("chat-input");
+const sendChatBtn = document.getElementById("send-chat-btn");
+
+function pruneChat() {
+  const kids = box.querySelectorAll(".msg");
+  if (kids.length > 22) kids[0].remove();
+}
+
+function addMsg() {
+  const m = messages[idx++ % messages.length];
+  const el = document.createElement("div");
+  el.className = "msg";
+
+  const b = m.badge === "v"   ? `<span class="badge-v">&#10003;</span>` :
+            m.badge === "sub" ? `<span class="badge-sub">S</span>` : "";
+
+  el.innerHTML = `${b}<span class="msg-user" style="color:${m.color}">${m.user}:</span><span class="msg-text"> ${m.text}</span>`;
+  box.appendChild(el);
+  pruneChat();
+}
+
+function sendTimprodMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  chatInput.value = "";
+  const el = document.createElement("div");
+  el.className = "msg msg-stream";
+  const u = document.createElement("span");
+  u.className = "msg-user msg-stream-user";
+  u.textContent = "timprod (STREAM):";
+  const t = document.createElement("span");
+  t.className = "msg-text";
+  t.textContent = " " + text;
+  el.appendChild(u);
+  el.appendChild(t);
+  box.appendChild(el);
+  pruneChat();
+}
+
+sendChatBtn.addEventListener("click", sendTimprodMessage);
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendTimprodMessage();
+  }
+});
+
+for (let i = 0; i < 13; i++) addMsg();
+
+(function loop() {
+  setTimeout(() => { addMsg(); loop(); }, 1600 + Math.random() * 2400);
+})();
+</script>
+</body>
+</html>
