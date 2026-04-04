@@ -909,6 +909,27 @@ function appendGiftSubAnnouncement() {
 
 setInterval(appendGiftSubAnnouncement, 60 * 1000);
 
+const atQuestionNames = [
+  { user: "jacob42", color: "#4d96ff" },
+  { user: "adeeba22", color: "#ff6b6b" },
+  { user: "jackson97", color: "#53FC18" },
+  { user: "maya03", color: "#ffd93d" },
+  { user: "chris_11", color: "#74c0fc" },
+  { user: "sofia88", color: "#fcc2d7" },
+  { user: "marcus7", color: "#ffa94d" },
+  { user: "priya_19", color: "#a9e34b" },
+  { user: "tyler64", color: "#9775fa" },
+  { user: "emma2k", color: "#69db7c" },
+];
+let atQuestionIdx = 0;
+
+function appendWhatsAtQuestion() {
+  const u = atQuestionNames[atQuestionIdx++ % atQuestionNames.length];
+  appendChatRow({ user: u.user, color: u.color, text: "whats the @", badge: null });
+}
+
+setInterval(appendWhatsAtQuestion, 15 * 1000);
+
 function startChatLoop() {
   function tick() {
     addMsg();
