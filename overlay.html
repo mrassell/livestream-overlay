@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
 <title>Kick Stream</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -135,6 +142,14 @@
     font-weight: 700;
     color: #fff;
     min-width: 44px;
+  }
+
+  .viewer-chip .stream-handle {
+    font-size: 12px;
+    font-weight: 700;
+    color: #c084fc;
+    letter-spacing: 0.02em;
+    margin-left: 2px;
   }
 
   /* stream duration */
@@ -276,7 +291,7 @@
     justify-content: flex-end;
   }
 
-  /* Invisible center target: double-tap toggles flood / hype chat */
+  /* Invisible center target: double-tap starts hype burst (ramp → peak → fade) */
   .flood-doubletap-zone {
     position: fixed;
     left: 50%;
@@ -316,6 +331,17 @@
     padding-left: 10px;
   }
   .msg-stream-user { color: var(--green); }
+
+  .msg-gift-subs {
+    background: rgba(124, 58, 237, 0.14);
+    border-left: 2px solid #a78bfa;
+    margin-left: 8px;
+    padding-left: 10px;
+  }
+
+  .msg-gift-subs .msg-text {
+    color: rgba(255, 255, 255, 0.88);
+  }
 
   .badge-sub {
     display: inline-block;
@@ -383,6 +409,117 @@
     border: none;
     cursor: pointer;
   }
+
+  body.standalone-app .fullscreen-pill {
+    display: none;
+  }
+
+  .fullscreen-pill {
+    position: fixed;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 55;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(15, 15, 15, 0.92);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    pointer-events: auto;
+  }
+
+  .fullscreen-pill svg {
+    flex-shrink: 0;
+    opacity: 0.9;
+  }
+
+  .fullscreen-pill:active {
+    opacity: 0.92;
+  }
+
+  .fullscreen-help {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(8px);
+  }
+
+  .fullscreen-help.is-open {
+    display: flex;
+  }
+
+  .fullscreen-help-card {
+    max-width: 340px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 20px 18px;
+    color: var(--text);
+  }
+
+  .fullscreen-help-card h2 {
+    font-size: 17px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    letter-spacing: 0.02em;
+  }
+
+  .fullscreen-help-card p {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .fullscreen-help-card ol {
+    margin: 0 0 18px 1.1em;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .fullscreen-help-card li {
+    margin-bottom: 8px;
+  }
+
+  .fullscreen-help-card .fs-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .fullscreen-help-close {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: var(--green);
+    color: #000;
+    font-weight: 800;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -407,6 +544,7 @@
         <circle cx="12" cy="12" r="3"/>
       </svg>
       <span id="viewer-count">14,784</span>
+      <span class="stream-handle">@timprod</span>
     </div>
     <div class="duration" id="duration">01:05:16</div>
   </div>
@@ -445,6 +583,27 @@
 </div>
 
 <div class="flood-doubletap-zone" id="flood-doubletap-zone" aria-hidden="true"></div>
+
+<button type="button" class="fullscreen-pill" id="btn-fullscreen" aria-label="Open without browser bar">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+    <path d="M8 3H5a2 2 0 00-2 2v3M21 8V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3M16 21h3a2 2 0 002-2v-3"/>
+  </svg>
+  Full screen
+</button>
+
+<div class="fullscreen-help" id="fullscreen-help" role="dialog" aria-modal="true" aria-labelledby="fs-help-title" aria-hidden="true">
+  <div class="fullscreen-help-card">
+    <h2 id="fs-help-title">Hide the Safari bar</h2>
+    <p>iPhone Safari can’t remove the URL bar from a normal tab. Add this page to your Home Screen — it opens like an app with no address bar.</p>
+    <ol>
+      <li>Tap <strong>Share</strong> <span aria-hidden="true">(□↑)</span> in Safari’s toolbar.</li>
+      <li>Scroll and tap <strong>Add to Home Screen</strong>.</li>
+      <li>Tap <strong>Add</strong>, then open the new icon — overlay and chat use the full screen.</li>
+    </ol>
+    <p class="fs-note">Android: use the browser menu → “Add to Home screen” or “Install app”. On some devices the Full screen button may hide the bar without installing.</p>
+    <button type="button" class="fullscreen-help-close" id="fullscreen-help-close">Got it</button>
+  </div>
+</div>
 
 <script>
 /* ── Camera (facing + mirror) ── */
@@ -615,9 +774,10 @@ const sendChatBtn = document.getElementById("send-chat-btn");
 
 let chatLoopTimer = null;
 let hypeBurstActive = false;
-/** ~2s full spam, then ~3s taper (slower + fewer Ws + more normal lines) */
+/** Ramp up → peak spam → taper down (mirror fade-out on the way in) */
+const HYPE_FADE_IN_MS = 3000;
 const HYPE_PEAK_MS = 2000;
-const HYPE_FADE_MS = 3000;
+const HYPE_FADE_OUT_MS = 3000;
 
 const hypeChatters = [
   { user: "Wspam_bot9000", color: "#53FC18" },
@@ -751,6 +911,18 @@ chatInput.addEventListener("keydown", (e) => {
 
 for (let i = 0; i < 13; i++) addMsg();
 
+function appendGiftSubAnnouncement() {
+  const gifter = messages[Math.floor(Math.random() * messages.length)];
+  const el = document.createElement("div");
+  el.className = "msg msg-gift-subs";
+  el.innerHTML =
+    `<span class="badge-sub">S</span><span class="msg-user" style="color:${gifter.color}">${gifter.user}</span><span class="msg-text"> gifted 5 subs to the community!</span>`;
+  box.appendChild(el);
+  pruneChat();
+}
+
+setInterval(appendGiftSubAnnouncement, 60 * 1000);
+
 function startChatLoop() {
   function tick() {
     addMsg();
@@ -763,7 +935,9 @@ function runHypeBurst() {
   if (hypeBurstActive) return;
   hypeBurstActive = true;
   const startAt = Date.now();
-  const totalMs = HYPE_PEAK_MS + HYPE_FADE_MS;
+  const peakStart = HYPE_FADE_IN_MS;
+  const peakEnd = HYPE_FADE_IN_MS + HYPE_PEAK_MS;
+  const totalMs = HYPE_FADE_IN_MS + HYPE_PEAK_MS + HYPE_FADE_OUT_MS;
 
   function burstTick() {
     const elapsed = Date.now() - startAt;
@@ -773,13 +947,32 @@ function runHypeBurst() {
       return;
     }
 
-    if (elapsed < HYPE_PEAK_MS) {
+    if (elapsed < peakStart) {
+      const u = elapsed / HYPE_FADE_IN_MS;
+      const inv = 1 - u;
+      const skipBeat = Math.random() < inv * inv * 0.42;
+      if (!skipBeat) {
+        const hypeBias = Math.min(1, 0.08 + u * u * 0.92 + Math.random() * 0.1);
+        if (Math.random() < hypeBias) {
+          appendChatRow(randomHypeMsg());
+        } else {
+          appendChatRow(messages[idx++ % messages.length]);
+        }
+      }
+      const minGap = 88 + inv * inv * 740;
+      const jitter = Math.random() * (125 + inv * 510);
+      const delay = skipBeat ? 48 + Math.random() * (95 + inv * 270) : minGap + jitter;
+      setTimeout(burstTick, delay);
+      return;
+    }
+
+    if (elapsed < peakEnd) {
       appendChatRow(randomHypeMsg());
       setTimeout(burstTick, 24 + Math.random() * 82);
       return;
     }
 
-    const u = (elapsed - HYPE_PEAK_MS) / HYPE_FADE_MS;
+    const u = (elapsed - peakEnd) / HYPE_FADE_OUT_MS;
     const skipBeat = Math.random() < u * u * 0.42;
     if (!skipBeat) {
       const hypeBias = Math.max(0, 1 - u * 1.15 - Math.random() * 0.12);
@@ -816,6 +1009,82 @@ floodZone.addEventListener("dblclick", (e) => {
   e.preventDefault();
   runHypeBurst();
 });
+
+let chatSoloFloodLastTap = 0;
+document.addEventListener(
+  "touchend",
+  (e) => {
+    if (!document.body.classList.contains("chat-solo") || hypeBurstActive) return;
+    const now = Date.now();
+    if (now - chatSoloFloodLastTap < DOUBLE_TAP_MS) {
+      e.preventDefault();
+      runHypeBurst();
+      chatSoloFloodLastTap = 0;
+    } else {
+      chatSoloFloodLastTap = now;
+    }
+  },
+  { passive: false, capture: true }
+);
+
+document.addEventListener(
+  "dblclick",
+  (e) => {
+    if (!document.body.classList.contains("chat-solo") || hypeBurstActive) return;
+    e.preventDefault();
+    runHypeBurst();
+  },
+  true
+);
+
+(function initFullscreenUi() {
+  const pill = document.getElementById("btn-fullscreen");
+  const help = document.getElementById("fullscreen-help");
+  const helpClose = document.getElementById("fullscreen-help-close");
+  if (!pill || !help || !helpClose) return;
+
+  function isStandaloneDisplay() {
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: fullscreen)").matches ||
+      (typeof navigator !== "undefined" && navigator.standalone === true)
+    );
+  }
+
+  function refreshStandalone() {
+    document.body.classList.toggle("standalone-app", isStandaloneDisplay());
+  }
+
+  refreshStandalone();
+  window.matchMedia("(display-mode: standalone)").addEventListener("change", refreshStandalone);
+
+  function closeHelp() {
+    help.classList.remove("is-open");
+    help.setAttribute("aria-hidden", "true");
+  }
+
+  function openHelp() {
+    help.classList.add("is-open");
+    help.setAttribute("aria-hidden", "false");
+  }
+
+  pill.addEventListener("click", async () => {
+    const root = document.documentElement;
+    const req = root.requestFullscreen || root.webkitRequestFullscreen;
+    if (typeof req === "function") {
+      try {
+        await req.call(root);
+        return;
+      } catch (_) {}
+    }
+    openHelp();
+  });
+
+  helpClose.addEventListener("click", closeHelp);
+  help.addEventListener("click", (e) => {
+    if (e.target === help) closeHelp();
+  });
+})();
 
 startChatLoop();
 </script>
