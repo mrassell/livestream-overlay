@@ -729,28 +729,41 @@ chatTab.addEventListener("click", () => {
 
 /* ── Chat ── */
 const messages = [
-  { user: "trapshxt",         color: "#ff922b", text: "YO Fetty Wap is the headliner tonight??", badge: null },
-  { user: "brick_squad_917",  color: "#53FC18", text: "fetty wap at lawnparties is crazyyyy", badge: null },
-  { user: "jxstn___",         color: "#ff6b6b", text: "W princeton", badge: null },
-  { user: "mike2wavy",        color: "#ffd93d", text: "LAWNPARTIES W", badge: "sub" },
-  { user: "xSniper2007",      color: "#53FC18", text: "this is insane rn", badge: "v" },
-  { user: "kayla_xo",         color: "#4d96ff", text: "south lawn is PACKED rn", badge: null },
-  { user: "nobody420",        color: "#ff922b", text: "i need to transfer LMAOOO", badge: null },
-  { user: "toast_crunch",     color: "#cc5de8", text: "who's headlining tonight", badge: "sub" },
-  { user: "user8943021",      color: "#ff6b6b", text: "W stream fr fr", badge: null },
-  { user: "BIGMAN_TY",        color: "#74c0fc", text: "princeton eating rn no cap", badge: "sub" },
-  { user: "zzzsleepyhead",    color: "#a9e34b", text: "LETS GOOOOOO", badge: null },
-  { user: "ryder__x",         color: "#ffa94d", text: "this is free?? insane", badge: null },
-  { user: "lil_g",            color: "#da77f2", text: "every year they top themselves", badge: "sub" },
-  { user: "thomas_shelbyfan", color: "#4dabf7", text: "W W W W W princeton", badge: null },
-  { user: "bored_at_work",    color: "#ff6b6b", text: "crowd is going absolutely crazy", badge: null },
-  { user: "capybaraEnjoyer",  color: "#69db7c", text: "peak ivy experience right here", badge: "sub" },
-  { user: "sarahh_22",        color: "#fcc2d7", text: "GOATED event as always", badge: null },
-  { user: "nmttt",            color: "#ff922b", text: "princeton on top no debate", badge: null },
-  { user: "night_owl_exe",    color: "#9775fa", text: "vibes are unreal rn bro", badge: "sub" },
-  { user: "diegooo",          color: "#74c0fc", text: "biggest L not being there", badge: null },
-  { user: "vtuber_enjoyer",   color: "#f783ac", text: "POGGERS lawnparties delivering", badge: null },
-  { user: "jakefromstate",    color: "#69db7c", text: "princeton stays winning", badge: "sub" },
+  { user: "trapshxt",         color: "#F58426", text: "ECF GAME 2 AT MSG KNICKS W LETS GOOOO", badge: null },
+  { user: "brick_squad_917",  color: "#53FC18", text: "THIS IS OUR YEAR NO DEBATE", badge: null },
+  { user: "jxstn___",         color: "#006BB6", text: "KNICKS IN 4 CAVS ARE COOKED", badge: null },
+  { user: "mike2wavy",        color: "#ffd93d", text: "JALEN BRUNSON IS THE HOOP GOVERNOR OF NYC", badge: "sub" },
+  { user: "xSniper2007",      color: "#53FC18", text: "MSG IS SHAKING RN BRO", badge: "v" },
+  { user: "nobody420",        color: "#ff922b", text: "cavs fans quiet as hell LMAOO", badge: null },
+  { user: "toast_crunch",     color: "#cc5de8", text: "trae young watching from home crying", badge: "sub" },
+  { user: "user8943021",      color: "#ff6b6b", text: "W stream W knicks W nyc", badge: null },
+  { user: "BIGMAN_TY",        color: "#006BB6", text: "cleveland who?? we at the garden", badge: "sub" },
+  { user: "zzzsleepyhead",    color: "#a9e34b", text: "LETS GO KNICKS LFGGGG", badge: null },
+  { user: "ryder__x",         color: "#ffa94d", text: "took the 4 train straight to MSG W", badge: null },
+  { user: "lil_g",            color: "#da77f2", text: "mobley who? hartenenbaum owns the paint", badge: "sub" },
+  { user: "thomas_shelbyfan", color: "#F58426", text: "ORANGE AND BLUE ARMY WWWW", badge: null },
+  { user: "bored_at_work",    color: "#ff6b6b", text: "garden crowd louder than cleveland ever", badge: null },
+  { user: "capybaraEnjoyer",  color: "#69db7c", text: "trae young hairline took an L before the game", badge: "sub" },
+  { user: "sarahh_22",        color: "#fcc2d7", text: "KNICKS TAPE ON REPEAT IN THE BODEGA", badge: null },
+  { user: "nmttt",            color: "#006BB6", text: "cavs in 6? NAH KNICKS IN 4", badge: null },
+  { user: "night_owl_exe",    color: "#9775fa", text: "james harden playoff mode = turnovers and excuses", badge: "sub" },
+  { user: "diegooo",          color: "#74c0fc", text: "harden flopping in the MSG concourse not on the court", badge: null },
+  { user: "chaos_koi_88",     color: "#ff6b6b", text: "beard harden chokes harder than the cavs bench", badge: null },
+  { user: "vtuber_enjoyer",   color: "#F58426", text: "wemby not ready for the garden yet sit down", badge: null },
+  { user: "lukewarm_pizza",   color: "#006BB6", text: "wembanyama still on training wheels we run NYC", badge: null },
+  { user: "jakefromstate",    color: "#53FC18", text: "nyc runs the east this is our year", badge: "sub" },
+  { user: "marcus7live",      color: "#F58426", text: "brunson in the 4th is UNGUARDABLE nobody touches him", badge: "v" },
+  { user: "emilystreams",     color: "#006BB6", text: "jalen brunson best PG in the east and its not close", badge: null },
+  { user: "goblin_milk",      color: "#53FC18", text: "brunson drops 40 and the garden becomes a religion", badge: "sub" },
+  { user: "auntie_rae",       color: "#fcc2d7", text: "brunson got that villanova killer gene + MSG aura", badge: null },
+  { user: "reece_made_it",    color: "#ffa94d", text: "they leave brunson open he BLESSES the city every time", badge: null },
+  { user: "pixel_drifter",    color: "#006BB6", text: "brunson midrange is pure art nobody contest that", badge: null },
+  { user: "sarahh_22",        color: "#F58426", text: "if brunson shoots it its going in trust the process", badge: "sub" },
+  { user: "night_owl_exe",    color: "#9775fa", text: "brunson doesnt miss clutch shots he IS clutch", badge: null },
+  { user: "toast_crunch",     color: "#53FC18", text: "give brunson the keys to the city already", badge: null },
+  { user: "ryder__x",         color: "#fcc2d7", text: "brunson haters in shambles tonight watch", badge: null },
+  { user: "user8943021",      color: "#ffd93d", text: "brunson waving off defenders like rucker park", badge: "v" },
+  { user: "bored_at_work",    color: "#da77f2", text: "jalen brunson built different for MSG moments", badge: null },
 ];
 
 let idx = 0;
@@ -766,21 +779,24 @@ const HYPE_PEAK_MS = 2000;
 const HYPE_FADE_OUT_MS = 3000;
 
 const hypeChatters = [
-  { user: "Wspam_bot9000", color: "#53FC18" },
-  { user: "valid_or_bust", color: "#ff6b6b" },
-  { user: "southlawn_enjoyer", color: "#4d96ff" },
+  { user: "Wspam_bot9000", color: "#F58426" },
+  { user: "valid_or_bust", color: "#006BB6" },
+  { user: "xX_darkWolfXx", color: "#ff6b6b" },
   { user: "WWWWWWWWWWW", color: "#ffd93d" },
-  { user: "princetonW", color: "#74c0fc" },
-  { user: "L_to_W_converter", color: "#cc5de8" },
+  { user: "nightbus_404", color: "#53FC18" },
+  { user: "cereal_void", color: "#cc5de8" },
   { user: "chat_is_MOVING", color: "#69db7c" },
-  { user: "W_key_stuck", color: "#ffa94d" },
-  { user: "no_cap_just_W", color: "#9775fa" },
-  { user: "stream_goes_hard", color: "#fcc2d7" },
+  { user: "offline_ryan", color: "#ffa94d" },
+  { user: "no_cap_just_rl", color: "#9775fa" },
+  { user: "goblin_milk", color: "#fcc2d7" },
   { user: "W_W_W_W_W", color: "#a9e34b" },
-  { user: "ivy_legue_W", color: "#4dabf7" },
-  { user: "crowd_synccccc", color: "#53FC18" },
+  { user: "pinky_lag", color: "#4dabf7" },
+  { user: "coco_puffin", color: "#53FC18" },
   { user: "spam_Ws_if_agree", color: "#ff922b" },
-  { user: "lawnparties_W", color: "#da77f2" },
+  { user: "L_to_W_converter", color: "#da77f2" },
+  { user: "chaos_koi_88", color: "#ff922b" },
+  { user: "marcus7live", color: "#F58426" },
+  { user: "emilystreams", color: "#006BB6" },
 ];
 
 function randomHypeLine() {
@@ -806,8 +822,16 @@ function randomHypeLine() {
     () => "this is peak W",
     () => "W overload",
     () => "W key broke",
-    () => "princeton W W W",
-    () => "IYKYK W",
+    () => "KNICKS W W W",
+    () => "MSG W W W",
+    () => "CAVS L CAVS L",
+    () => "trae young L",
+    () => "THIS IS OUR YEAR",
+    () => "KNICKS IN 4",
+    () => "ORANGE AND BLUE W",
+    () => "GARDEN W GARDEN W",
+    () => "NYC W NYC W",
+    () => "IYKYK KNICKS W",
     () => "W spam incoming",
     () => "W".repeat(8) + "!!!",
     () => "VALID VALID W",
@@ -827,6 +851,32 @@ function randomHypeLine() {
     () => "HYPE TRAIN",
     () => "WWW LETS GO",
     () => "LETS GO WWW",
+    () => "LETS GO KNICKS",
+    () => "LETS GO KNICKS GO",
+    () => "KNICKS KNICKS KNICKS",
+    () => "BRUNSON W",
+    () => "BRUNSON GOAT",
+    () => "JALEN W",
+    () => "brunson MVP",
+    () => "brunson UNREAL",
+    () => "HOOP GOVERNOR W",
+    () => "brunson CARRY",
+    () => "glaze brunson",
+    () => "BRUNSON CLUTCH",
+    () => "brunson GOAT",
+    () => "jalen built different",
+    () => "HOOP GOVERNOR",
+    () => "brunson automatic",
+    () => "BRUNSON MVP",
+    () => "HART W",
+    () => "CAVS WHO",
+    () => "CLEVELAND L",
+    () => "trae young hairline L",
+    () => "harden L",
+    () => "james harden L",
+    () => "wemby not ready",
+    () => "ECF W ECF W",
+    () => "GAME 2 W",
   ];
   return lines[Math.floor(Math.random() * lines.length)]();
 }
@@ -908,27 +958,6 @@ function appendGiftSubAnnouncement() {
 }
 
 setInterval(appendGiftSubAnnouncement, 60 * 1000);
-
-const atQuestionNames = [
-  { user: "jacob42", color: "#4d96ff" },
-  { user: "adeeba22", color: "#ff6b6b" },
-  { user: "jackson97", color: "#53FC18" },
-  { user: "maya03", color: "#ffd93d" },
-  { user: "chris_11", color: "#74c0fc" },
-  { user: "sofia88", color: "#fcc2d7" },
-  { user: "marcus7", color: "#ffa94d" },
-  { user: "priya_19", color: "#a9e34b" },
-  { user: "tyler64", color: "#9775fa" },
-  { user: "emma2k", color: "#69db7c" },
-];
-let atQuestionIdx = 0;
-
-function appendWhatsAtQuestion() {
-  const u = atQuestionNames[atQuestionIdx++ % atQuestionNames.length];
-  appendChatRow({ user: u.user, color: u.color, text: "whats the @", badge: null });
-}
-
-setInterval(appendWhatsAtQuestion, 15 * 1000);
 
 function startChatLoop() {
   function tick() {
