@@ -531,7 +531,7 @@
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
         <circle cx="12" cy="12" r="3"/>
       </svg>
-      <span id="viewer-count">14,784</span>
+      <span id="viewer-count">4,084</span>
       <span class="stream-handle">@timprod</span>
     </div>
     <div class="duration" id="duration">01:05:16</div>
@@ -553,7 +553,7 @@
 <div class="chat-panel">
   <div class="chat-header">
     <button type="button" class="chat-tab" id="chat-tab" aria-pressed="false" title="Chat fullscreen">CHAT</button>
-    <div class="pill" id="pill-count">14,784</div>
+    <div class="pill" id="pill-count">4,084</div>
   </div>
 
   <div class="chat-messages" id="chat-messages"></div>
@@ -692,7 +692,7 @@ setInterval(() => {
 }, 1000);
 
 /* ── Viewer count ── */
-let viewers = 14784;
+let viewers = 4084;
 
 function renderViewers() {
   const s = viewers.toLocaleString();
@@ -703,7 +703,7 @@ function renderViewers() {
 function tickViewers() {
   const delta = Math.floor(Math.random() * 5) + 1;
   viewers += Math.random() < 0.5 ? -delta : delta;
-  viewers = Math.max(14100, Math.min(16200, viewers));
+  viewers = Math.max(3900, Math.min(4200, viewers));
   renderViewers();
 }
 
